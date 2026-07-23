@@ -72,6 +72,8 @@ agar_metadata/
 preprocessed_intensity*/
 processed_plate*/
 results_*/
+paper_data/
+paper_outputs/
 
 # Downloaded archives and dataset bundles
 *.zip

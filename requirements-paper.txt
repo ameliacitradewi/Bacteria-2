@@ -1,0 +1,14 @@
+# Existing image-processing dependencies
+numpy
+pandas
+opencv-python
+scikit-image
+scikit-learn
+pillow
+tqdm
+matplotlib
+
+# Deep-learning stages used by the paper pipeline
+torch
+torchvision
+
