@@ -1,0 +1,94 @@
+# Virtual environments and local configuration
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Raw datasets (large and reproducible from the original source)
+AGAR_dataset/
+
+# Python bytecode and tool caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Build and packaging artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Temporary files and OS/editor metadata
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+*.before_patch_*.py
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and experiment trackers
+*.log
+logs/
+runs/
+wandb/
+mlruns/
+lightning_logs/
+
+# Model checkpoints and exported weights
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# Large generated experiment artifacts. Keep audit reports, manifests,
+# configuration files, and selected QA images versionable.
+outputs/poc/
+outputs/full/
+outputs/stage3/
+outputs/checkpoints/
+outputs/logs/
+outputs/**/*.npy
+outputs/**/*.npz
+
+# Project-specific generated data and preprocessing results
+agar_metadata/
+preprocessed_intensity*/
+processed_plate*/
+results_*/
+
+# Downloaded archives and dataset bundles
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Generated and local image files in any directory
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tif
+*.tiff
+*.webp
+*.heic
+*.heif
