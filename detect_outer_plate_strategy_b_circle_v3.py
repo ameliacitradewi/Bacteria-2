@@ -1348,3 +1348,23 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+import pandas as pd
+
+annotations = pd.read_csv(
+    "processed_plate_strategy_b_circle/"
+    "object_annotations_normalized.csv"
+)
+
+retention = annotations[
+    "center_inside_counting_mask"
+].mean()
+
+print(f"Annotation retention: {retention:.4%}")
+
+print(
+    annotations.groupby("background")[
+        "center_inside_counting_mask"
+    ].mean()
+)
