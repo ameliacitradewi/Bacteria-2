@@ -1,0 +1,4 @@
+# Core ML Tools 9.0 adalah rilis stabil yang dipakai oleh paket ini.
+# Bila PyTorch Kaggle lebih baru dari versi yang didukung converter, lakukan tahap
+# export pada environment macOS terpisah dengan PyTorch 2.7.x.
+coremltools==9.0

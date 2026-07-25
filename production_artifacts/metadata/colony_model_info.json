@@ -1,0 +1,12 @@
+{
+  "model": "ResNet50FPNCenterNet",
+  "total_parameters": 25625029,
+  "trainable_parameters": 25625029,
+  "tile_size": 512,
+  "output_stride": 4,
+  "checkpoint": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts/checkpoints/resnet50_fpn_centernet_best.pt",
+  "best_val_loss": 123.90884872436523,
+  "device": "mps",
+  "train_tiles": 16,
+  "val_tiles": 25
+}

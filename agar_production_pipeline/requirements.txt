@@ -1,0 +1,15 @@
+# Kaggle biasanya sudah menyediakan torch dan torchvision.
+torch>=2.3
+torchvision>=0.18
+albumentations==2.0.8
+opencv-python-headless>=4.9
+numpy>=1.26
+pandas>=2.0
+scikit-learn>=1.3
+Pillow>=10.0
+tqdm>=4.66
+PyYAML>=6.0
+torchmetrics[detection]>=1.4
+pycocotools>=2.0.7
+matplotlib>=3.8
+

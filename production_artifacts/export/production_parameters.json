@@ -1,0 +1,29 @@
+{
+  "plate_input_size": 320,
+  "plate_threshold": 0.5,
+  "colony_tile_size": 512,
+  "colony_tile_overlap": 128,
+  "colony_output_stride": 4,
+  "colony_score_threshold": 0.25,
+  "tile_nms_iou": 0.3,
+  "global_nms_iou": 0.25,
+  "tile_edge_margin": 16,
+  "imagenet_mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "imagenet_std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "plate_roi_target_size": 2048,
+  "plate_crop_padding_ratio": 1.04,
+  "plate_counting_scale": 1.0,
+  "flatfield_sigma_ratio": 0.04,
+  "safe_erode_ratio": 0.025,
+  "safe_minimum_fraction": 0.15,
+  "flatfield_percentile_low": 1.0,
+  "flatfield_percentile_high": 99.0
+}

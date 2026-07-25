@@ -1,0 +1,13 @@
+{
+  "model": "U2NETP",
+  "total_parameters": 1128333,
+  "trainable_parameters": 1128333,
+  "image_size": 320,
+  "threshold": 0.5,
+  "best_val_dice": 0.9768299446196663,
+  "checkpoint": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts/checkpoints/u2netp_plate_best.pt",
+  "device": "mps",
+  "train_images": 100,
+  "val_images": 2243,
+  "test_images": 2245
+}

@@ -1,0 +1,4 @@
+artifact,format,status,message
+PlateU2NetP.torchscript.pt,TorchScript,success,
+ColonyResNet50FPN.torchscript.pt,TorchScript,success,
+Core ML packages,Core ML,failed,No module named 'coremltools'

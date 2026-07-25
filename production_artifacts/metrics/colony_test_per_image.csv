@@ -1,0 +1,4 @@
+image_id,split,plate_condition,true_count,true_count_boxes,pred_count,error,absolute_error,relative_error,tp_iou50,fp_iou50,fn_iou50
+1,test,empty,0,0,0,0,0,0.0,0,0,0
+1003,test,countable,2,0,0,-2,2,1.0,0,0,0
+1008,test,countable,102,0,0,-102,102,1.0,0,0,0

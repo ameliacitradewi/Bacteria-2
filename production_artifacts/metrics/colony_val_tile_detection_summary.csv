@@ -1,0 +1,2 @@
+split,tile_map,tile_map_50,tile_map_75,tile_precision_iou50,tile_recall_iou50,tile_f1_iou50,tile_tp,tile_fp,tile_fn
+val,-1.0,-1.0,-1.0,0.0,0.0,0.0,0,0,0

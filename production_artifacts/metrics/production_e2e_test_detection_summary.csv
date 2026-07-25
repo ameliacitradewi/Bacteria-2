@@ -1,0 +1,2 @@
+split,map,map_50,map_75,precision_iou50,recall_iou50,f1_iou50,tp_iou50,fp_iou50,fn_iou50
+test,-1.0,-1.0,-1.0,0.0,0.0,0.0,0,0,0

@@ -395,16 +395,64 @@ def process_dataset(
         detections_path,
         dtype={"image_id": "string"},
     )
-    detections = detections[
-        detections["processing_status"].astype(str) == "success"
-    ].copy()
-    if limit is not None:
-        detections = detections.head(limit).copy()
 
     image_column = {
         "normalized_raw": "normalized_raw_path",
         "normalized_masked": "normalized_masked_path",
     }[input_variant]
+
+    required_columns = {
+        "image_id",
+        "background",
+        "processing_status",
+        "detection_status",
+        image_column,
+        "normalized_counting_mask_path",
+    }
+
+    missing = required_columns.difference(detections.columns)
+    if missing:
+        raise KeyError(
+            "Kolom yang dibutuhkan tidak ada di detection CSV: "
+            f"{sorted(missing)}"
+        )
+
+    processing_status = (
+        detections["processing_status"]
+        .astype("string")
+        .str.strip()
+        .str.lower()
+    )
+
+    detection_status = (
+        detections["detection_status"]
+        .astype("string")
+        .str.strip()
+        .str.lower()
+    )
+
+    detections = detections[
+        processing_status.eq("success")
+        & detection_status.isin(["ok", "low_confidence"])
+    ].copy()
+
+    detections = detections.sort_values(
+        ["background", "image_id"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+    if limit is not None:
+        detections = detections.head(limit).copy()
+
+    print("\nData yang akan dinormalisasi:")
+    print(
+        detections["detection_status"]
+        .astype(str)
+        .str.lower()
+        .value_counts()
+    )
+    print("Total:", len(detections))
+    
     required_columns = {
         "image_id",
         "background",
@@ -647,7 +695,7 @@ def main() -> None:
         default=0.04,
         help=(
             "Sigma Gaussian relatif terhadap sisi gambar. "
-            "0.04 pada 2048 px kira-kira sigma 82 px."
+            "0.04 pada 2048 px kira-kira     82 px."
         ),
     )
     parser.add_argument("--percentile-low", type=float, default=1.0)

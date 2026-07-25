@@ -1,0 +1,75 @@
+# Folder pipeline ini diasumsikan diletakkan di dalam repository Bacteria-2.
+project_root: ..
+dataset_root: ../AGAR_dataset/dataset
+metadata_dir: ../agar_metadata
+classical_plate_dir: ../processed_plate_strategy_b_circle
+intensity_dir: ../preprocessed_intensity_sigma040
+output_dir: ../production_artifacts
+
+seed: 42
+device: auto
+
+classical_plate:
+  detection_max_side: 1400
+  target_size: 2048
+  physical_expansion: 1.01
+  counting_scale: 1.00
+  crop_padding_ratio: 1.04
+  radial_min_ratio: 0.82
+  radial_max_ratio: 1.25
+  n_angles: 720
+
+intensity:
+  input_variant: normalized_raw
+  safe_erode_ratio: 0.025
+  outlier_mad: 3.5
+  safe_minimum_fraction: 0.15
+  flatfield_sigma_ratio: 0.04
+  percentile_low: 1.0
+  percentile_high: 99.0
+
+plate:
+  image_size: 320
+  batch_size: 8
+  workers: 4
+  epochs: 2
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  threshold: 0.50
+  early_stopping_patience: 8
+  # Deteksi cawan merupakan tugas sederhana; subset representatif mempercepat training.
+  # Hapus/null-kan nilai ini untuk menggunakan semua pseudo-label yang berhasil.
+  max_train_images: 100
+
+colony:
+  tile_size: 512
+  tile_overlap: 128
+  tile_jpeg_quality: 95
+  negative_tiles_per_image: 2
+  min_visible_fraction: 0.25
+  batch_size: 8
+  workers: 4
+  epochs: 2
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  fpn_channels: 128
+  pretrained: true
+  freeze_stem: false
+  output_stride: 4
+  size_loss_weight: 0.10
+  offset_loss_weight: 1.00
+  score_threshold: 0.25
+  tile_nms_iou: 0.30
+  global_nms_iou: 0.25
+  tile_edge_margin: 16
+  topk: 500
+  early_stopping_patience: 7
+  # Untuk smoke test, isi misalnya 2000. Untuk training final gunakan null.
+  max_train_tiles: 500
+
+evaluation:
+  # null = evaluasi seluruh validation/test set.
+  max_images: 10
+
+coreml:
+  minimum_target: macOS13
