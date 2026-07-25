@@ -885,7 +885,7 @@ def transform_annotations(
     objects_path: Path,
     detections: pd.DataFrame,
     output_root: Path,
-) -> None:
+) -> Path | None:
     """Transformasikan bounding box asli ke koordinat plate yang dibulatkan.
 
     Karena normalisasi memakai affine transform (rotasi + anisotropic scale),
@@ -895,7 +895,7 @@ def transform_annotations(
     objects = pd.read_csv(objects_path)
     if objects.empty:
         print("object_annotations.csv kosong; transformasi anotasi dilewati.")
-        return
+        return None
 
     if "image_id" not in objects.columns:
         raise KeyError(
@@ -916,7 +916,7 @@ def transform_annotations(
     objects = objects[objects["_image_id_key"].isin(detected_ids)].copy()
     if objects.empty:
         print("Tidak ada anotasi objek yang cocok dengan image_id hasil deteksi.")
-        return
+        return None
 
     affine_columns = [
         "affine_m00", "affine_m01", "affine_m02",
@@ -1042,6 +1042,96 @@ def transform_annotations(
     output_path = output_root / "object_annotations_normalized.csv"
     merged.to_csv(output_path, index=False)
     print(f"Anotasi hasil transformasi: {output_path}")
+    return output_path
+
+
+def print_results_report(
+    detections: pd.DataFrame,
+    annotations_path: Path | None = None,
+) -> None:
+    """Cetak ringkasan deteksi dan retensi anotasi yang sudah tersimpan."""
+    required_detection_columns = {
+        "image_id",
+        "processing_status",
+        "detection_status",
+    }
+    missing_detection = required_detection_columns - set(detections.columns)
+    if missing_detection:
+        raise KeyError(
+            "Kolom laporan deteksi tidak tersedia: "
+            f"{sorted(missing_detection)}"
+        )
+
+    print("\nProcessing status:")
+    print(detections["processing_status"].value_counts(dropna=False))
+    print("\nDetection status:")
+    print(detections["detection_status"].value_counts(dropna=False))
+
+    successful = detections[detections["processing_status"] == "success"]
+    quality_columns = [
+        "accepted_coverage",
+        "mean_residual_ratio",
+        "axis_ratio",
+    ]
+    available_quality = [
+        column for column in quality_columns if column in successful.columns
+    ]
+    if not successful.empty and available_quality:
+        print("\nStatistik kualitas:")
+        print(successful[available_quality].describe())
+
+    if annotations_path is None or not annotations_path.exists():
+        return
+
+    annotations = pd.read_csv(annotations_path)
+    required_annotation_columns = {
+        "image_id",
+        "center_inside_counting_mask",
+    }
+    missing_annotations = required_annotation_columns - set(annotations.columns)
+    if missing_annotations:
+        raise KeyError(
+            "Kolom laporan anotasi tidak tersedia: "
+            f"{sorted(missing_annotations)}"
+        )
+
+    retention_column = "center_inside_counting_mask"
+    retention = annotations[retention_column].mean()
+    print(f"\nAnnotation retention: {retention:.4%}")
+
+    annotations = annotations.copy()
+    annotations["_image_id_key"] = annotations["image_id"].map(
+        _normalize_image_id_value
+    )
+
+    detection_background = detections.copy()
+    detection_background["_image_id_key"] = detection_background[
+        "image_id"
+    ].map(_normalize_image_id_value)
+    if "background" not in detection_background.columns:
+        print(
+            "Annotation retention per background dilewati: kolom "
+            "'background' tidak tersedia pada hasil deteksi."
+        )
+        return
+
+    background_lookup = (
+        detection_background[["_image_id_key", "background"]]
+        .dropna(subset=["_image_id_key"])
+        .drop_duplicates(subset="_image_id_key", keep="last")
+    )
+    annotations = annotations.merge(
+        background_lookup,
+        on="_image_id_key",
+        how="left",
+        validate="many_to_one",
+    )
+    print("\nAnnotation retention per background:")
+    print(
+        annotations.groupby("background", dropna=False)[retention_column]
+        .agg(["count", "mean"])
+        .rename(columns={"count": "n_annotations", "mean": "retention"})
+    )
 
 def process_dataset(
     dataset_root: Path,
@@ -1251,23 +1341,16 @@ def process_dataset(
     detection_path = output_root / "plate_detection_strategy_b.csv"
     detections.to_csv(detection_path, index=False)
 
+    annotations_path = None
     if objects_path is not None and objects_path.exists():
-        transform_annotations(objects_path, detections, output_root)
+        annotations_path = transform_annotations(
+            objects_path,
+            detections,
+            output_root,
+        )
 
     print(f"Hasil deteksi: {detection_path}")
-    print("\nProcessing status:")
-    print(detections["processing_status"].value_counts(dropna=False))
-    print("\nDetection status:")
-    print(detections["detection_status"].value_counts(dropna=False))
-
-    successful = detections[detections["processing_status"] == "success"]
-    if not successful.empty:
-        print("\nStatistik kualitas:")
-        print(
-            successful[
-                ["accepted_coverage", "mean_residual_ratio", "axis_ratio"]
-            ].describe()
-        )
+    print_results_report(detections, annotations_path)
 
 
 def main() -> None:
@@ -1319,6 +1402,14 @@ def main() -> None:
     parser.add_argument("--n-angles", type=int, default=720)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--debug-limit", type=int, default=200)
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help=(
+            "Cetak laporan dari CSV yang sudah ada tanpa menjalankan ulang "
+            "deteksi plate."
+        ),
+    )
     args = parser.parse_args()
 
     if args.target_size <= 0:
@@ -1327,6 +1418,21 @@ def main() -> None:
         raise ValueError("--counting-scale harus berada pada 0.90–1.05.")
     if args.radial_min_ratio >= args.radial_max_ratio:
         raise ValueError("radial-min-ratio harus lebih kecil dari radial-max-ratio.")
+
+    if args.report_only:
+        output_root = args.output.resolve()
+        detection_path = output_root / "plate_detection_strategy_b.csv"
+        annotations_path = output_root / "object_annotations_normalized.csv"
+        if not detection_path.exists():
+            raise FileNotFoundError(
+                f"Hasil deteksi tidak ditemukan: {detection_path}"
+            )
+        print(f"Hasil deteksi: {detection_path}")
+        print_results_report(
+            pd.read_csv(detection_path),
+            annotations_path if annotations_path.exists() else None,
+        )
+        return
 
     process_dataset(
         dataset_root=args.dataset_root,
@@ -1348,23 +1454,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-import pandas as pd
-
-annotations = pd.read_csv(
-    "processed_plate_strategy_b_circle/"
-    "object_annotations_normalized.csv"
-)
-
-retention = annotations[
-    "center_inside_counting_mask"
-].mean()
-
-print(f"Annotation retention: {retention:.4%}")
-
-print(
-    annotations.groupby("background")[
-        "center_inside_counting_mask"
-    ].mean()
-)
