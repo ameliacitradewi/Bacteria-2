@@ -3,7 +3,7 @@ project_root: ..
 dataset_root: ../AGAR_dataset/dataset
 metadata_dir: ../agar_metadata
 classical_plate_dir: ../processed_plate_strategy_b_circle
-intensity_dir: ../preprocessed_intensity_sigma040
+intensity_dir: ../preprocessed_intensity
 output_dir: ../production_artifacts
 
 seed: 42
