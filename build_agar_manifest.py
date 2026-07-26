@@ -18,11 +18,11 @@ from sklearn.model_selection import GroupShuffleSplit
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 MICROORGANISM_CLASSES = {
-    "Staphylococcus aureus",
-    "Bacillus subtilis",
-    "Pseudomonas aeruginosa",
-    "Escherichia coli",
-    "Candida albicans",
+    "S.aureus",
+    "B.subtilis",
+    "P.aeruginosa",
+    "E.coli",
+    "C.albicans",
 }
 
 ARTIFACT_CLASSES = {
