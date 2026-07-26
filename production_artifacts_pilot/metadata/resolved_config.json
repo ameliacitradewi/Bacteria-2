@@ -4,7 +4,7 @@
   "metadata_dir": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/agar_metadata",
   "classical_plate_dir": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/processed_plate_strategy_b_circle",
   "intensity_dir": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/preprocessed_intensity",
-  "output_dir": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts",
+  "output_dir": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts_pilot",
   "seed": 42,
   "device": "auto",
   "classical_plate": {
@@ -35,7 +35,7 @@
     "weight_decay": 0.0001,
     "threshold": 0.5,
     "early_stopping_patience": 8,
-    "max_train_images": 2500
+    "max_train_images": 1000
   },
   "colony": {
     "tile_size": 512,
@@ -45,7 +45,7 @@
     "min_visible_fraction": 0.25,
     "batch_size": 8,
     "workers": 4,
-    "epochs": 25,
+    "epochs": 20,
     "learning_rate": 0.0002,
     "weight_decay": 0.0001,
     "fpn_channels": 128,
@@ -60,13 +60,13 @@
     "tile_edge_margin": 16,
     "topk": 500,
     "early_stopping_patience": 7,
-    "max_train_tiles": null
+    "max_train_tiles": 5000
   },
   "evaluation": {
-    "max_images": null
+    "max_images": 100
   },
   "coreml": {
     "minimum_target": "macOS13"
   },
-  "config_path": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/agar_production_pipeline/config.yaml"
+  "config_path": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/agar_production_pipeline/config.pilot.yaml"
 }

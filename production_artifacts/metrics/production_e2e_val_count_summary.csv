@@ -1,2 +1,2 @@
 split,n_images,mae,median_absolute_error,rmse,mean_bias,mape_nonzero,smape,within_5_colonies,within_10_colonies,within_10_percent_or_2,pearson_correlation
-val,10,11.6,6.0,17.532826355154494,-11.6,1.0,2.0,0.5,0.7,0.2,
+val,1687,23.219917012448132,10.0,42.7190127297787,-23.219917012448132,1.0,1.7996443390634262,0.4007113218731476,0.5109662122110255,0.23473621813870776,

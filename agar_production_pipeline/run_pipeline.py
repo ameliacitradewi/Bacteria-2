@@ -39,6 +39,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-manifest", action="store_true")
     parser.add_argument("--force-plate", action="store_true")
     parser.add_argument("--force-intensity", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Lanjutkan training plate/colony dari checkpoint *_last.pt. "
+            "Jika checkpoint last belum ada, checkpoint best akan dicoba."
+        ),
+    )
     parser.add_argument("--image", type=Path, help="Foto tunggal untuk command predict.")
     parser.add_argument("--prediction-output", type=Path, default=None)
     return parser.parse_args()
@@ -59,11 +67,11 @@ def main() -> None:
             force_intensity=args.force_intensity,
         )
     if args.command in {"train-plate", "all"}:
-        train_plate_model(config)
+        train_plate_model(config, resume=args.resume)
     if args.command in {"prepare-tiles", "all"}:
         materialize_colony_tiles(config, overwrite=args.overwrite_tiles)
     if args.command in {"train-colony", "all"}:
-        train_colony_model(config)
+        train_colony_model(config, resume=args.resume)
     if args.command in {"evaluate", "all"}:
         evaluate_colony_model(config, split="val")
         evaluate_colony_model(config, split="test")

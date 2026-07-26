@@ -79,8 +79,11 @@ def _save_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: Any,
+    scaler: torch.cuda.amp.GradScaler | None,
     epoch: int,
     best_metric: float,
+    stale_epochs: int,
+    history: list[dict[str, Any]],
     config: dict[str, Any],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -89,12 +92,57 @@ def _save_checkpoint(
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "scheduler_state_dict": scheduler.state_dict() if scheduler else None,
+            "scaler_state_dict": scaler.state_dict() if scaler else None,
             "epoch": epoch,
             "best_metric": best_metric,
+            "stale_epochs": stale_epochs,
+            "history": history,
             "config": config,
         },
         path,
     )
+
+
+def _resume_training_state(
+    checkpoint_path: Path,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: Any,
+    scaler: torch.cuda.amp.GradScaler | None,
+    device: torch.device,
+    default_best_metric: float,
+) -> tuple[int, float, int, list[dict[str, Any]]]:
+    """Memuat state training dan mengembalikan epoch berikutnya.
+
+    Checkpoint lama yang belum memiliki scaler, stale_epochs, atau history tetap
+    dapat dibaca dengan nilai default yang aman.
+    """
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    state_dict = checkpoint.get("model_state_dict", checkpoint)
+    model.load_state_dict(state_dict)
+
+    optimizer_state = checkpoint.get("optimizer_state_dict")
+    if optimizer_state:
+        optimizer.load_state_dict(optimizer_state)
+
+    scheduler_state = checkpoint.get("scheduler_state_dict")
+    if scheduler is not None and scheduler_state:
+        scheduler.load_state_dict(scheduler_state)
+
+    scaler_state = checkpoint.get("scaler_state_dict")
+    if scaler is not None and scaler_state:
+        scaler.load_state_dict(scaler_state)
+
+    completed_epoch = int(checkpoint.get("epoch", 0))
+    best_metric = float(checkpoint.get("best_metric", default_best_metric))
+    stale_epochs = int(checkpoint.get("stale_epochs", 0))
+    history = list(checkpoint.get("history", []))
+
+    print(
+        f"Resume dari {checkpoint_path.name}: "
+        f"epoch selesai={completed_epoch}, epoch berikutnya={completed_epoch + 1}"
+    )
+    return completed_epoch + 1, best_metric, stale_epochs, history
 
 
 def _load_original_resized(path: str, size: int) -> np.ndarray:
@@ -195,7 +243,9 @@ def evaluate_plate_model(
     return frame, summary
 
 
-def train_plate_model(config: dict[str, Any]) -> dict[str, str]:
+def train_plate_model(
+    config: dict[str, Any], resume: bool = False
+) -> dict[str, str]:
     seed_everything(int(config.get("seed", 42)))
     device = resolve_device(str(config.get("device", "auto")))
     output_dir = Path(config["output_dir"])
@@ -265,8 +315,35 @@ def train_plate_model(config: dict[str, Any]) -> dict[str, str]:
     stale_epochs = 0
     history: list[dict[str, Any]] = []
     best_path = checkpoints_dir / "u2netp_plate_best.pt"
+    last_path = checkpoints_dir / "u2netp_plate_last.pt"
+    start_epoch = 1
 
-    for epoch in range(1, epochs + 1):
+    if resume:
+        resume_path = last_path if last_path.exists() else best_path
+        if resume_path.exists():
+            start_epoch, best_dice, stale_epochs, history = _resume_training_state(
+                resume_path,
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                device,
+                default_best_metric=-math.inf,
+            )
+            history_path = metrics_dir / "plate_training_history.csv"
+            if not history and history_path.exists():
+                history = pd.read_csv(history_path).to_dict("records")
+        else:
+            print("--resume dipilih, tetapi checkpoint plate belum ditemukan. Mulai dari awal.")
+
+    if start_epoch > epochs:
+        print(f"Training plate sudah mencapai epoch maksimum ({epochs}).")
+    elif stale_epochs >= patience:
+        print("Training plate sudah memenuhi kondisi early stopping.")
+
+    for epoch in range(start_epoch, epochs + 1):
+        if stale_epochs >= patience:
+            break
         model.train()
         train_loss_sum = 0.0
         train_samples = 0
@@ -310,9 +387,35 @@ def train_plate_model(config: dict[str, Any]) -> dict[str, str]:
         if val_dice > best_dice:
             best_dice = val_dice
             stale_epochs = 0
-            _save_checkpoint(best_path, model, optimizer, scheduler, epoch, best_dice, config)
+            _save_checkpoint(
+                best_path,
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                epoch,
+                best_dice,
+                stale_epochs,
+                history,
+                config,
+            )
         else:
             stale_epochs += 1
+
+        # Disimpan setiap epoch selesai. Jika proses dihentikan pada epoch berikutnya,
+        # resume akan kembali ke epoch terakhir yang selesai sepenuhnya.
+        _save_checkpoint(
+            last_path,
+            model,
+            optimizer,
+            scheduler,
+            scaler,
+            epoch,
+            best_dice,
+            stale_epochs,
+            history,
+            config,
+        )
         if stale_epochs >= patience:
             break
 
@@ -414,7 +517,9 @@ def _colony_epoch(
     return output
 
 
-def train_colony_model(config: dict[str, Any]) -> dict[str, str]:
+def train_colony_model(
+    config: dict[str, Any], resume: bool = False
+) -> dict[str, str]:
     seed_everything(int(config.get("seed", 42)))
     device = resolve_device(str(config.get("device", "auto")))
     output_dir = Path(config["output_dir"])
@@ -474,9 +579,36 @@ def train_colony_model(config: dict[str, Any]) -> dict[str, str]:
     best_loss = math.inf
     stale_epochs = 0
     best_path = checkpoints_dir / "resnet50_fpn_centernet_best.pt"
+    last_path = checkpoints_dir / "resnet50_fpn_centernet_last.pt"
     history: list[dict[str, Any]] = []
+    start_epoch = 1
 
-    for epoch in range(1, epochs + 1):
+    if resume:
+        resume_path = last_path if last_path.exists() else best_path
+        if resume_path.exists():
+            start_epoch, best_loss, stale_epochs, history = _resume_training_state(
+                resume_path,
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                device,
+                default_best_metric=math.inf,
+            )
+            history_path = metrics_dir / "colony_training_history.csv"
+            if not history and history_path.exists():
+                history = pd.read_csv(history_path).to_dict("records")
+        else:
+            print("--resume dipilih, tetapi checkpoint colony belum ditemukan. Mulai dari awal.")
+
+    if start_epoch > epochs:
+        print(f"Training colony sudah mencapai epoch maksimum ({epochs}).")
+    elif stale_epochs >= patience:
+        print("Training colony sudah memenuhi kondisi early stopping.")
+
+    for epoch in range(start_epoch, epochs + 1):
+        if stale_epochs >= patience:
+            break
         started = time.perf_counter()
         train_metrics = _colony_epoch(
             model, train_loader, device, optimizer, scaler, colony_cfg
@@ -499,9 +631,33 @@ def train_colony_model(config: dict[str, Any]) -> dict[str, str]:
         if val_loss < best_loss:
             best_loss = val_loss
             stale_epochs = 0
-            _save_checkpoint(best_path, model, optimizer, scheduler, epoch, best_loss, config)
+            _save_checkpoint(
+                best_path,
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                epoch,
+                best_loss,
+                stale_epochs,
+                history,
+                config,
+            )
         else:
             stale_epochs += 1
+
+        _save_checkpoint(
+            last_path,
+            model,
+            optimizer,
+            scheduler,
+            scaler,
+            epoch,
+            best_loss,
+            stale_epochs,
+            history,
+            config,
+        )
         if stale_epochs >= patience:
             break
 

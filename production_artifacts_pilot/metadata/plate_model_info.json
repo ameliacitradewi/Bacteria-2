@@ -4,10 +4,10 @@
   "trainable_parameters": 1128333,
   "image_size": 320,
   "threshold": 0.5,
-  "best_val_dice": 0.9934923732511814,
-  "checkpoint": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts/checkpoints/u2netp_plate_best.pt",
+  "best_val_dice": 0.9933832476741378,
+  "checkpoint": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/production_artifacts_pilot/checkpoints/u2netp_plate_best.pt",
   "device": "mps",
-  "train_images": 2500,
+  "train_images": 1000,
   "val_images": 2243,
   "test_images": 2245
 }

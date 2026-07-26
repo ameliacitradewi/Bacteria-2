@@ -3,7 +3,7 @@
   "objects": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/agar_metadata/object_annotations.csv",
   "plate_detection": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/processed_plate_strategy_b_circle/plate_detection_strategy_b.csv",
   "normalized_annotations": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/processed_plate_strategy_b_circle/object_annotations_normalized.csv",
-  "intensity_metrics": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/preprocessed_intensity_sigma040/intensity_metrics.csv",
+  "intensity_metrics": "/Users/ameliacitra/Documents/AI-ML/Bacteria-2/preprocessed_intensity/intensity_metrics.csv",
   "plate_processing_status": {
     "success": 17958,
     "failed": 42
